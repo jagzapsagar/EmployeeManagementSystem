@@ -23,8 +23,8 @@ public class EmployeeService {
 	@Autowired
     private EmployeeRepository employeeRepository;
 	
-	private static final String DEPARTMENT_SERVICE_URL = "http://localhost:8082/departments/name/";
-	private static final String PAYROLL_SERVICE_URL = "http://localhost:8083/payrolls";
+	private static final String DEPARTMENT_SERVICE_URL = "http://localhost:8088/departments/name/";
+	private static final String PAYROLL_SERVICE_URL = "http://localhost:8088/payrolls";
     // Create a new employee
 	@Transactional
     public Employee saveEmployee(Employee employee) {
@@ -67,11 +67,14 @@ public class EmployeeService {
     public EmployeeWithDepartment getEmployeeById(Long id) {
        Employee emp = employeeRepository.findById(id).orElse(null);
      // Call Department service to get department info
-        String departmentServiceUrl = "http://localhost:8082/departments/name/" + emp.getDepartment();
-        Department department = restTemplate.getForObject(departmentServiceUrl, Department.class);
+        //String departmentServiceUrl = "http://EMDEPARTMENTSERVICE/departments/name/" + emp.getDepartment();
+        Department department = restTemplate.getForObject(DEPARTMENT_SERVICE_URL+emp.getDepartment(), Department.class);
+        Payroll empPayroll = restTemplate.getForObject(
+                PAYROLL_SERVICE_URL + "/emp/"+ emp.getId(), Payroll.class);
         EmployeeWithDepartment empDep = new EmployeeWithDepartment();
         empDep.setEmployee(emp);
         empDep.setDepartment(department);
+        empDep.setPayroll(empPayroll);
         return empDep;
     }
 
