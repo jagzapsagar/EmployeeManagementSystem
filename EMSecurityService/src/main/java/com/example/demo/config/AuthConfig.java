@@ -30,7 +30,7 @@ public class AuthConfig {
 	            .cors(cors -> cors.configure(http)) // ✅ Enable CORS
 	            .authorizeHttpRequests(auth -> auth
 	                .requestMatchers("/auth/register", "/auth/token", "/auth/validate").permitAll() // ✅ Public Endpoints
-	                .anyRequest().authenticated() // ✅ Other requests require authentication
+	                .anyRequest().authenticated() // ✅ Other requests require authentication //,"/payrolls/**"
 	            )
 	            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // ✅ Stateless session
 	            .build();

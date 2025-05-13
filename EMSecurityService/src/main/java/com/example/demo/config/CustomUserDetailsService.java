@@ -19,7 +19,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		// TODO Auto-generated method stub
 		Optional<User> credential = repository.findByName(username);
-		System.out.println("-------------------------");
+		System.out.println("-----------CustomUserDetailsService.class--------------");
 		System.out.println(credential.get());
         return credential.map(CustomUserDetails::new).orElseThrow(() -> 
         new UsernameNotFoundException("user not found with name :" + username));

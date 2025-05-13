@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.DTO.EmployeeDTO;
 import com.example.demo.DTO.EmployeeWithDepartment;
 import com.example.demo.entity.Employee;
 import com.example.demo.serviceIMPL.EmployeeService;
@@ -31,13 +32,13 @@ public class EmployeeController {
 
     // Get all employees
     @GetMapping
-    public List<Employee> getAllEmployees() {
+    public List<EmployeeDTO> getAllEmployees() {
         return employeeService.getAllEmployees();
     }
 
     // Get employee by ID
     @GetMapping("/{id}")
-    public EmployeeWithDepartment getEmployeeById(@PathVariable Long id) {
+    public EmployeeDTO getEmployeeById(@PathVariable Long id) {
         return employeeService.getEmployeeById(id);
     }
 
