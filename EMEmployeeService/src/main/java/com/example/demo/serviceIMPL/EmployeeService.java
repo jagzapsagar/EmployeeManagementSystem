@@ -11,6 +11,8 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+
 
 import com.example.demo.DTO.Department;
 import com.example.demo.DTO.EmployeeDTO;
@@ -66,7 +68,17 @@ public class EmployeeService {
 		payroll.setBonus(savedEmployee.getBonus()); // Use the bonus passed in the request
 		payroll.setDeductions(savedEmployee.getDeductions()); // Use deductions passed in the request
 
-		Payroll createdPayroll = restTemplate.postForObject(PAYROLL_SERVICE_URL, payroll, Payroll.class);
+		//Payroll createdPayroll = restTemplate.postForObject(PAYROLL_SERVICE_URL, payroll, Payroll.class);
+		headers.set("Authorization", token); // reuse it
+		HttpEntity<Payroll> payrollEntity = new HttpEntity<>(payroll,headers);
+		ResponseEntity<Payroll> response = restTemplate.exchange(
+			    PAYROLL_SERVICE_URL,
+			    HttpMethod.POST,
+			    payrollEntity,
+			    Payroll.class
+			);
+
+			Payroll createdPayroll = response.getBody();
 
 		if (createdPayroll == null) {
 			throw new RuntimeException("Failed to create payroll for the employee");
@@ -165,6 +177,19 @@ public class EmployeeService {
 
 	// Delete an employee
 	public void deleteEmployee(Long id) {
+		
+		String token = request.getHeader("Authorization");
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON); 
+		headers.set("Authorization", token); // reuse it
+		HttpEntity<String> entity = new HttpEntity<>(headers);
+		Optional<Employee> findById = employeeRepository.findById(id);
+		if(findById.isPresent()) {
+			restTemplate.exchange(PAYROLL_SERVICE_URL + "/empid/" + findById.get().getId(),
+					HttpMethod.DELETE, entity, Payroll.class);
+		}
+		
+		
 		employeeRepository.deleteById(id);
 	}
 }

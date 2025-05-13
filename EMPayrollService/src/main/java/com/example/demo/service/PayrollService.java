@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.entity.Payroll;
 import com.example.demo.repo.PayrollRepository;
@@ -47,6 +48,10 @@ public class PayrollService {
     // Delete payroll record by ID
     public void deletePayroll(Long id) {
         payrollRepository.deleteById(id);
+    }
+    @Transactional
+    public void deleteByEmployeeId(Long id) {
+        payrollRepository.deleteByEmployeeId(id);
     }
 
 	public Payroll getPayrollByEmployeeId(Long employeeId) {

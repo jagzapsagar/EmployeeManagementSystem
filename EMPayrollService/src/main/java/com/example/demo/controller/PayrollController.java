@@ -57,5 +57,10 @@ public class PayrollController {
     public void deletePayroll(@PathVariable Long id) {
         payrollService.deletePayroll(id);
     }
+    
+    @DeleteMapping("/empid/{id}")
+    public void deleteByEmployeeId(@PathVariable Long id) {
+        payrollService.deleteByEmployeeId(id);
+    }
 
 }

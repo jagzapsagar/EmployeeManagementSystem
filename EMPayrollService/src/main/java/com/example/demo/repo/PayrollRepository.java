@@ -7,5 +7,6 @@ import com.example.demo.entity.Payroll;
 public interface PayrollRepository extends JpaRepository<Payroll, Long> {
 
 	Payroll findByEmployeeId(Long employeeId);
+	void deleteByEmployeeId(Long employeeId);
 
 }
