@@ -13,12 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
-
 import com.example.demo.DTO.Department;
 import com.example.demo.DTO.EmployeeDTO;
 import com.example.demo.DTO.Payroll;
 import com.example.demo.convertor.EmployeeMapper;
 import com.example.demo.entity.Employee;
+import com.example.demo.exception.DepartmentNotFound;
 import com.example.demo.repo.EmployeeRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,40 +51,32 @@ public class EmployeeService {
 		ResponseEntity<Department> department = restTemplate.exchange(DEPARTMENT_SERVICE_URL + employee.getDepartment(),
 				HttpMethod.GET, entity, Department.class);
 
-		if (department != null) {
-			// Set department information in Employee
+		if (department.getBody() != null) {
+
 			employee.setDepartment(department.getBody().getDepartmentName());
 		} else {
-			throw new RuntimeException("Department not found");
+			throw new DepartmentNotFound("Department not found");
 		}
 
-		Employee savedEmployee = employeeRepository.save(employee);
-		//
 		// Create a corresponding payroll entry for the employee with values from the
 		// request
 		Payroll payroll = new Payroll();
-		payroll.setEmployeeId(savedEmployee.getId());
-		payroll.setSalary(savedEmployee.getSalary()); // Use the salary passed in the request
-		payroll.setBonus(savedEmployee.getBonus()); // Use the bonus passed in the request
-		payroll.setDeductions(savedEmployee.getDeductions()); // Use deductions passed in the request
+		payroll.setEmployeeId(employee.getId());
+		payroll.setSalary(employee.getSalary()); // Use the salary passed in the request
+		payroll.setBonus(employee.getBonus()); // Use the bonus passed in the request
+		payroll.setDeductions(employee.getDeductions()); // Use deductions passed in the request
 
-		//Payroll createdPayroll = restTemplate.postForObject(PAYROLL_SERVICE_URL, payroll, Payroll.class);
 		headers.set("Authorization", token); // reuse it
-		HttpEntity<Payroll> payrollEntity = new HttpEntity<>(payroll,headers);
-		ResponseEntity<Payroll> response = restTemplate.exchange(
-			    PAYROLL_SERVICE_URL,
-			    HttpMethod.POST,
-			    payrollEntity,
-			    Payroll.class
-			);
+		HttpEntity<Payroll> payrollEntity = new HttpEntity<>(payroll, headers);
+		ResponseEntity<Payroll> response = restTemplate.exchange(PAYROLL_SERVICE_URL, HttpMethod.POST, payrollEntity,
+				Payroll.class);
 
-			Payroll createdPayroll = response.getBody();
+		Payroll createdPayroll = response.getBody();
 
 		if (createdPayroll == null) {
 			throw new RuntimeException("Failed to create payroll for the employee");
 		}
-		//
-		return savedEmployee;
+		return employeeRepository.save(employee);
 	}
 
 	// Get all employees
@@ -93,46 +85,43 @@ public class EmployeeService {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Authorization", token); // reuse it
 		HttpEntity<String> entity = new HttpEntity<>(headers);
-		
+
 		List<Employee> findAll = employeeRepository.findAll();
 		List<EmployeeDTO> employeeDTOList = new ArrayList<>();
-		
+
 		for (Employee emp : findAll) {
 			EmployeeDTO employeeDTO = employeeMapper.toEmployeeDTO(emp);
 			try {
-	            // Department service call
-	            ResponseEntity<Department> dResponse = restTemplate.exchange(
-	                DEPARTMENT_SERVICE_URL + emp.getDepartment(),
-	                HttpMethod.GET, entity, Department.class);
+				// Department service call
+				ResponseEntity<Department> dResponse = restTemplate.exchange(
+						DEPARTMENT_SERVICE_URL + emp.getDepartment(), HttpMethod.GET, entity, Department.class);
 
-	            Department department = dResponse.getBody();
-	            employeeDTO.setDepartmentName(department.getDepartmentName());
-	            employeeDTO.setDepartmentCode(department.getDepartmentCode());
-	            employeeDTO.setDepartmentId(department.getId());
+				Department department = dResponse.getBody();
+				employeeDTO.setDepartmentName(department.getDepartmentName());
+				employeeDTO.setDepartmentCode(department.getDepartmentCode());
+				employeeDTO.setDepartmentId(department.getId());
 
-	        }catch (Exception e) {
-	            System.out.println("Failed to fetch department for employee ID " + emp.getId() + ": " + e.getMessage());
-	        }
+			} catch (Exception e) {
+				System.out.println("Failed to fetch department for employee ID " + emp.getId() + ": " + e.getMessage());
+			}
 			try {
-	            // Payroll service call
-	            ResponseEntity<Payroll> pResponse = restTemplate.exchange(
-	                PAYROLL_SERVICE_URL + "/emp/" + emp.getId(),
-	                HttpMethod.GET, entity, Payroll.class);
+				// Payroll service call
+				ResponseEntity<Payroll> pResponse = restTemplate.exchange(PAYROLL_SERVICE_URL + "/emp/" + emp.getId(),
+						HttpMethod.GET, entity, Payroll.class);
 
-	            Payroll payroll = pResponse.getBody();
-	            employeeDTO.setSalary(payroll.getSalary());
-	            employeeDTO.setBonus(payroll.getBonus());
-	            employeeDTO.setDeductions(payroll.getDeductions());
+				Payroll payroll = pResponse.getBody();
+				employeeDTO.setSalary(payroll.getSalary());
+				employeeDTO.setBonus(payroll.getBonus());
+				employeeDTO.setDeductions(payroll.getDeductions());
 
-	        } catch (Exception e) {
-	            System.out.println("Failed to fetch payroll for employee ID " + emp.getId() + ": " + e.getMessage());
-	        }
+			} catch (Exception e) {
+				System.out.println("Failed to fetch payroll for employee ID " + emp.getId() + ": " + e.getMessage());
+			}
 			employeeDTOList.add(employeeDTO);
 		}
-		
+
 		return employeeDTOList;
-		
-		
+
 	}
 
 	// Get employee by ID
@@ -177,19 +166,18 @@ public class EmployeeService {
 
 	// Delete an employee
 	public void deleteEmployee(Long id) {
-		
+
 		String token = request.getHeader("Authorization");
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON); 
+		headers.setContentType(MediaType.APPLICATION_JSON);
 		headers.set("Authorization", token); // reuse it
 		HttpEntity<String> entity = new HttpEntity<>(headers);
 		Optional<Employee> findById = employeeRepository.findById(id);
-		if(findById.isPresent()) {
-			restTemplate.exchange(PAYROLL_SERVICE_URL + "/empid/" + findById.get().getId(),
-					HttpMethod.DELETE, entity, Payroll.class);
+		if (findById.isPresent()) {
+			restTemplate.exchange(PAYROLL_SERVICE_URL + "/empid/" + findById.get().getId(), HttpMethod.DELETE, entity,
+					Payroll.class);
 		}
-		
-		
+
 		employeeRepository.deleteById(id);
 	}
 }
